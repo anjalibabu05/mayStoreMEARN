@@ -1,13 +1,13 @@
-import React, { useContext, useEffect, useState } from 'react'
-import AdminSidebar from '../components/AdminSidebar'
-import Header from '../../users/components/Header'
-import Footer from '../../components/Footer'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faPen } from '@fortawesome/free-solid-svg-icons'
-import { toast, ToastContainer } from 'react-toastify'
-import { serverUrl } from '../../services/serverUrl'
-import { updateProfileApi } from '../../services/allApi'
-import { adminProfileUpdteContext } from '../../context/ContextSearch'
+import React, { useContext, useEffect, useState } from 'react';
+import AdminSidebar from '../components/AdminSidebar';
+import Header from '../../users/components/Header';
+import Footer from '../../components/Footer';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPen } from '@fortawesome/free-solid-svg-icons';
+import { toast, ToastContainer } from 'react-toastify';
+import { serverUrl } from '../../services/serverUrl';
+import { updateProfileApi } from '../../services/allApi';
+import { adminProfileUpdteContext } from '../../context/ContextSearch';
 
 const AdminSetting = () => {
   const [adminDetails, setAdminDetails] = useState({
@@ -31,7 +31,7 @@ const AdminSetting = () => {
     }
   };
 
-  // Reset form → restore data from sessionStorage
+  // Reset form
   const handleReset = () => {
     const storedUser = sessionStorage.getItem("existingUser");
     if (storedUser) {
@@ -62,9 +62,15 @@ const AdminSetting = () => {
     }
 
     try {
+      const storedToken = sessionStorage.getItem("token") || localStorage.getItem("token");
+      if (!storedToken) {
+        toast.error("Unauthorized: Please log in again!");
+        return;
+      }
+
       let reqBody;
       let headers = {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${storedToken}`,
       };
 
       if (preview) {
@@ -88,8 +94,6 @@ const AdminSetting = () => {
         sessionStorage.setItem("existingUser", JSON.stringify(result.data));
         setUpdateStatus(result.data);
         setPreview("");
-
-        // Notify sidebar via context + event
         setAdminProfileUpdateStatus(result.data);
         window.dispatchEvent(new Event("profileUpdated"));
       } else {
@@ -143,8 +147,8 @@ const AdminSetting = () => {
                     src={preview
                       ? preview
                       : existingProfileImg
-                      ? `${serverUrl}/upload/${existingProfileImg}`
-                      : "https://thumbs.dreamstime.com/b/default-avatar-profile-icon-vector-social-media-user-image-182145777.jpg"}
+                        ? `${serverUrl}/upload/${existingProfileImg}`
+                        : "https://thumbs.dreamstime.com/b/default-avatar-profile-icon-vector-social-media-user-image-182145777.jpg"}
                     alt="Profile"
                     className="w-20 h-20 rounded-full mb-4"
                   />
@@ -203,7 +207,7 @@ const AdminSetting = () => {
       <ToastContainer theme="colored" position="top-center" autoClose={2000} />
       <Footer />
     </>
-  )
-}
+  );
+};
 
 export default AdminSetting;

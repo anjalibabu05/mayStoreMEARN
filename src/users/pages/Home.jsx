@@ -71,7 +71,7 @@ const Home = () => {
                   type="text"
                   placeholder="Search Books..."
                   value={searchKey}
-                  onChange={(e) => setSearchKey(e.target.value)} // ✅ fixed
+                  onChange={(e) => setsearchKey(e.target.value)} // ✅ fixed
                   className="p-2 bg-white border border-blue-950 rounded-3xl placeholder-gray-500 w-full text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <FontAwesomeIcon
@@ -95,11 +95,11 @@ const Home = () => {
           {homeBook?.length > 0 ? (
             homeBook.map((item) => (
               <div key={item._id} className='p-3 shadow'>
-                <img src={item.ImageUrl} alt={item.title} style={{ width: '100%', height: '300px' }} />
+                <img src={item.imageUrl} alt={item.tittle} style={{ width: '100%', height: '300px' }} />
                 <div className='p-3 shadow'>
                   <div className='flex justify-center flex-col items-center mt-3'>
                     <p>{item.author}</p>
-                    <h3>{item.title}</h3>
+                    <h3>{item.tittle}</h3>
                     <p>{item.dPrice}</p>
                   </div>
                 </div>

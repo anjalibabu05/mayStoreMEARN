@@ -1,50 +1,23 @@
-// src/pages/Profile.js
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState } from "react";
 import Header from "../components/Header";
 import Footer from "../../components/Footer";
 import { faCircleCheck, faSquarePlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import EditProfile from "../components/EditProfile";
 import { toast, ToastContainer } from "react-toastify";
-import { userProfileUpdateContext } from "../../context/ContextSearch";
-import { getAllUserBooksApi } from "../../services/allApi";
-import { data } from "react-router-dom";
+import { uploadBookApi } from "../../services/allApi";
 
 const Profile = () => {
   const [sellStatus, setSellStatus] = useState(true);
   const [soldHistoryStatus, setSoldHistoryStatus] = useState(false);
   const [purchaseStatus, setPurchaseStatus] = useState(false);
-  const [token, setToken] = useState("");
-  const [userDetails, setUserDetails] = useState({
-    username: "",
-    profile: "",
-    bio: "",
-  });
 
-  const[userBook,setuserBook]=useState([])
-  const[userBroughtBook,setuserBroughtBook]=useState([])
-  const { userProfileUpdateStatus } = useContext(userProfileUpdateContext);
-
-  useEffect(() => {
-    if (sessionStorage.getItem("token")) {
-      setToken(sessionStorage.getItem("token"));
-      const user = JSON.parse(sessionStorage.getItem("existingUser"));
-      setUserDetails({
-        username: user.username,
-        profile: user.profile,
-        bio: user.bio || "",
-      });
-    }
-  }, [userProfileUpdateStatus]);
-
-  // ------------------------------
-  // Sell Book form data & preview
-  // ------------------------------
+  // book details
   const [bookDetails, setBookDetails] = useState({
     tittle: "",
     author: "",
     noOfPages: "",
-    ImageUrl: "",
+    imageUrl: "",
     price: "",
     dPrice: "",
     abstract: "",
@@ -52,27 +25,36 @@ const Profile = () => {
     language: "",
     isbn: "",
     category: "",
-    uploadedimages: [],
+    uploadimages: [],
   });
+
   const [preview, setPreview] = useState("");
   const [previewList, setPreviewList] = useState([]);
+  const [token, setToken] = useState("");
+  const [userDetails, setUserDetails] = useState({});
+  const [userProfileStatus, setUserProfileStatus] = useState({});
 
-  // Handle upload
+  // handle file upload
   const handleUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const url = URL.createObjectURL(file);
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const fileArray = [...bookDetails.uploadimages, files[0]];
+    setBookDetails({ ...bookDetails, uploadimages: fileArray });
+
+    const url = URL.createObjectURL(files[0]);
     setPreview(url);
-    setPreviewList([...previewList, url]);
+
+    setPreviewList((prev) => [...prev, url]);
   };
 
-  // Reset form
+  // reset form
   const handleReset = () => {
     setBookDetails({
       tittle: "",
       author: "",
       noOfPages: "",
-      ImageUrl: "",
+      imageUrl: "",
       price: "",
       dPrice: "",
       abstract: "",
@@ -80,58 +62,90 @@ const Profile = () => {
       language: "",
       isbn: "",
       category: "",
-      uploadedimages: [],
+      uploadimages: [],
     });
     setPreview("");
     setPreviewList([]);
   };
-  const getAllUserBooks = async () => {
-    try {
-      if (!token) return; // ✅ Prevent "missing token"
-      const reqHeader = {
-        Authorization: `Bearer ${token}`,
-      };
-      const result = await getAllUserBooksApi(reqHeader);
-      console.log(result);
-      if(result.status==200){
-        setuserBook(result.data)
-      }
-    } catch (error) {
-      console.log(error);
+
+  // submit
+  const handleSubmit = async () => {
+    const {
+      tittle,
+      author,
+      noOfPages,
+      imageUrl,
+      price,
+      dPrice,
+      abstract,
+      publisher,
+      language,
+      isbn,
+      category,
+      uploadimages,
+    } = bookDetails;
+
+    if (
+      !tittle ||
+      !author ||
+      !noOfPages ||
+      !imageUrl ||
+      !price ||
+      !dPrice ||
+      !abstract ||
+      !publisher ||
+      !language ||
+      !isbn ||
+      !category ||
+      uploadimages.length === 0
+    ) {
+      toast.info("Please fill the form completely");
+      return;
     }
-  };
-console.log(userBook);
-console.log(userBroughtBook);
 
-
-
-  const getAllUserBroughtBook = async () => {
     const reqHeader = {
       Authorization: `Bearer ${token}`,
     };
-    const result = await getAllUserBooksApi(reqHeader)
-    console.log(result);
-    if(result.status==200){
-        setuserBroughtBook(result.data)
+
+    const reqBody = new FormData();
+    for (let key in bookDetails) {
+      if (key !== "uploadimages") {
+        reqBody.append(key, bookDetails[key]);
+      } else {
+        bookDetails.uploadimages.forEach((item) => {
+          reqBody.append("uploadimages", item);
+        });
       }
+    }
 
-  }
+    try {
+      const result = await uploadBookApi(reqBody, reqHeader);
+      console.log(result);
 
+      if (result?.status === 401) {
+        toast.warning(result.response.data);
+      } else if (result?.status === 200) {
+        toast.success("Book Added Successfully");
+        handleReset();
+      } else {
+        toast.error("Something went wrong");
+      }
+    } catch (err) {
+      toast.error("Server error: " + err.message);
+    }
+  };
+
+  // user details
   useEffect(() => {
-    if (!token) return;
-
-    if (soldHistoryStatus) {
-      getAllUserBooks();
+    if (sessionStorage.getItem("token")) {
+      setToken(sessionStorage.getItem("token"));
+      const user = JSON.parse(sessionStorage.getItem("existingUser"));
+      setUserDetails({
+        username: user.username,
+        profile: user.profile,
+      });
     }
-    else if (purchaseStatus) {
-      getAllUserBroughtBook();
-    }
-    else {
-       console.log("Sold History Page"); // <- no more default page
-    }
-    
-  }, [sellStatus, soldHistoryStatus, purchaseStatus, token]);
-
+  }, [userProfileStatus]);
 
   return (
     <>
@@ -151,9 +165,8 @@ console.log(userBroughtBook);
       >
         <img
           src={
-            userDetails.profile
-              ? `http://localhost:4000/upload/${userDetails.profile}`
-              : "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+            userDetails.profile ||
+            "https://img.freepik.com/free-vector/blue-circle-with-white-user_78370-4707.jpg?semt=ais_hybrid&w=740&q=80"
           }
           alt="Profile"
           className="w-full h-full object-cover rounded-full"
@@ -166,12 +179,15 @@ console.log(userBroughtBook);
           <span className="text-2xl">{userDetails.username}</span>
           <FontAwesomeIcon icon={faCircleCheck} className="text-blue-700 ms-2" />
         </p>
-        <EditProfile />
+        <EditProfile setUserProfileStatus={setUserProfileStatus} />
       </div>
 
       {/* Bio */}
       <p className="md:px-20 px-5 my-5 text-justify">
-        {userDetails.bio || "No bio added yet. Edit your profile to add one!"}
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Ullam
+        repudiandae vel possimus deserunt nisi deleniti nobis dignissimos
+        provident ipsum eligendi corporis laborum odio atque, quaerat porro at
+        nostrum dolore quis.
       </p>
 
       {/* Tabs */}
@@ -189,7 +205,7 @@ console.log(userBroughtBook);
                 : "p-4 text-black border-b border-gray-200 cursor-pointer"
             }
           >
-           Add Book
+            Sell Book
           </p>
           <p
             onClick={() => {
@@ -221,59 +237,149 @@ console.log(userBroughtBook);
           </p>
         </div>
 
-        {/* ---------------- SELL BOOK SECTION ---------------- */}
+        {/* Sell Book Section */}
         {sellStatus && (
-          <div className="bg-gray-200 p-10 mt-20 rounded-md shadow">
+          <div className="bg-gray-200 p-10 mt-20">
             <h1 className="text-center text-3xl font-medium">Book Details</h1>
+
             <div className="md:grid grid-cols-2 mt-5 w-full">
-              {/* Left Column */}
+              {/* Left column */}
               <div className="px-3">
-                {["tittle", "author", "noOfPages", "ImageUrl", "price", "dPrice"].map((field, index) => (
+                <div className="mb-3">
                   <input
-                    key={index} 
-                    value={bookDetails[field]}
+                    value={bookDetails.tittle}
                     onChange={(e) =>
-                      setBookDetails({ ...bookDetails, [field]: e.target.value })
+                      setBookDetails({ ...bookDetails, tittle: e.target.value })
                     }
                     type="text"
-                    placeholder={field.replace(/([A-Z])/g, " $1")}
-                    className="p-2 bg-white rounded placeholder-gray-300 w-full mb-3"
+                    placeholder="Title"
+                    className="p-2 bg-white rounded placeholder-gray-300 w-full"
                   />
-                ))}
-                <textarea
-                  value={bookDetails.abstract}
-                  onChange={(e) =>
-                    setBookDetails({ ...bookDetails, abstract: e.target.value })
-                  }
-                  rows={5}
-                  placeholder="Abstract"
-                  className="p-2 bg-white rounded placeholder-gray-300 w-full mb-3"
-                ></textarea>
+                </div>
+                <div className="mb-3">
+                  <input
+                    value={bookDetails.author}
+                    onChange={(e) =>
+                      setBookDetails({ ...bookDetails, author: e.target.value })
+                    }
+                    type="text"
+                    placeholder="Author"
+                    className="p-2 bg-white rounded placeholder-gray-300 w-full"
+                  />
+                </div>
+                <div className="mb-3">
+                  <input
+                    value={bookDetails.noOfPages}
+                    onChange={(e) =>
+                      setBookDetails({
+                        ...bookDetails,
+                        noOfPages: e.target.value,
+                      })
+                    }
+                    type="text"
+                    placeholder="Number Of Pages"
+                    className="p-2 bg-white rounded placeholder-gray-300 w-full"
+                  />
+                </div>
+                <div className="mb-3">
+                  <input
+                    value={bookDetails.imageUrl}
+                    onChange={(e) =>
+                      setBookDetails({
+                        ...bookDetails,
+                        imageUrl: e.target.value,
+                      })
+                    }
+                    type="text"
+                    placeholder="Image URL"
+                    className="p-2 bg-white rounded placeholder-gray-300 w-full"
+                  />
+                </div>
+                <div className="mb-3">
+                  <input
+                    value={bookDetails.price}
+                    onChange={(e) =>
+                      setBookDetails({ ...bookDetails, price: e.target.value })
+                    }
+                    type="text"
+                    placeholder="Price"
+                    className="p-2 bg-white rounded placeholder-gray-300 w-full"
+                  />
+                </div>
+                <div className="mb-3">
+                  <input
+                    value={bookDetails.dPrice}
+                    onChange={(e) =>
+                      setBookDetails({ ...bookDetails, dPrice: e.target.value })
+                    }
+                    type="text"
+                    placeholder="Discount Price"
+                    className="p-2 bg-white rounded placeholder-gray-300 w-full"
+                  />
+                </div>
+                <div className="mb-3">
+                  <textarea
+                    value={bookDetails.abstract}
+                    onChange={(e) =>
+                      setBookDetails({
+                        ...bookDetails,
+                        abstract: e.target.value,
+                      })
+                    }
+                    rows={5}
+                    placeholder="Abstract"
+                    className="p-2 bg-white rounded placeholder-gray-300 w-full"
+                  ></textarea>
+                </div>
               </div>
 
-              {/* Right Column */}
+              {/* Right column */}
               <div className="px-3">
-                {["publisher", "language", "isbn", "category"].map((field, index) => (
-                  <input
-                    key={index}
-                    value={bookDetails[field]}
-                    onChange={(e) =>
-                      setBookDetails({ ...bookDetails, [field]: e.target.value })
-                    }
-                    type="text"
-                    placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
-                    className="p-2 bg-white rounded placeholder-gray-300 w-full mb-3"
-                  />
-                ))}
+                <input
+                  value={bookDetails.publisher}
+                  onChange={(e) =>
+                    setBookDetails({ ...bookDetails, publisher: e.target.value })
+                  }
+                  type="text"
+                  placeholder="Publisher"
+                  className="p-2 bg-white rounded placeholder-gray-300 w-full"
+                />
+                <input
+                  value={bookDetails.language}
+                  onChange={(e) =>
+                    setBookDetails({ ...bookDetails, language: e.target.value })
+                  }
+                  type="text"
+                  placeholder="Language"
+                  className="p-2 bg-white rounded placeholder-gray-300 w-full"
+                />
+                <input
+                  value={bookDetails.isbn}
+                  onChange={(e) =>
+                    setBookDetails({ ...bookDetails, isbn: e.target.value })
+                  }
+                  type="text"
+                  placeholder="ISBN"
+                  className="p-2 bg-white rounded placeholder-gray-300 w-full"
+                />
+                <input
+                  value={bookDetails.category}
+                  onChange={(e) =>
+                    setBookDetails({ ...bookDetails, category: e.target.value })
+                  }
+                  type="text"
+                  placeholder="Category"
+                  className="p-2 bg-white rounded placeholder-gray-300 w-full"
+                />
 
-                {/* Upload image */}
+                {/* File Upload */}
                 <div className="flex flex-col items-center">
                   {!preview ? (
-                    <label htmlFor="imageFile" className="cursor-pointer">
+                    <label htmlFor="imageFileMain" className="cursor-pointer">
                       <input
                         onChange={handleUpload}
                         type="file"
-                        id="imageFile"
+                        id="imageFileMain"
                         className="hidden"
                       />
                       <img
@@ -291,23 +397,17 @@ console.log(userBroughtBook);
                   )}
                 </div>
 
-                {/* Preview List */}
+                {/* Additional Image Add */}
                 {preview && (
-                  <div className="flex justify-center items-center mt-3">
+                  <div className="flex justify-center items-center">
                     {previewList.map((item, index) => (
-                      <img
-                        key={index}
-                        src={item}
-                        style={{ width: "70px" }}
-                        className="mx-1 rounded"
-                        alt="preview"
-                      />
+                      <img key={index} src={item} style={{ width: "70px" }} />
                     ))}
-                    <label htmlFor="imageFile" className="cursor-pointer mx-2">
+                    <label htmlFor="imageFileAdd" className="cursor-pointer">
                       <input
                         onChange={handleUpload}
                         type="file"
-                        id="imageFile"
+                        id="imageFileAdd"
                         className="hidden"
                       />
                       <FontAwesomeIcon icon={faSquarePlus} className="text-xl" />
@@ -324,41 +424,13 @@ console.log(userBroughtBook);
                     Reset
                   </button>
                   <button
-                    onClick={() => toast.success("Book Submitted (demo only)")}
+                    onClick={handleSubmit}
                     className="bg-green-600 rounded text-black px-5 py-2 hover:bg-white hover:border hover:border-green-600 hover:text-green-600"
                   >
                     Submit
                   </button>
                 </div>
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* ---------------- SOLD HISTORY SECTION ---------------- */}
-        {soldHistoryStatus && (
-          <div className="p-10 my-20 shadow rounded bg-gray-200">
-            <div className="flex flex-col items-center mt-10">
-              <img
-                src="https://img.freepik.com/premium-vector/art-illustration_29190-8569.jpg"
-                alt="no books"
-                style={{ width: "200px", height: "200px" }}
-              />
-              <p className="text-gray-700 mt-2">No Books added yet</p>
-            </div>
-          </div>
-        )}
-
-        {/* ---------------- PURCHASE HISTORY SECTION ---------------- */}
-        {purchaseStatus && (
-          <div className="p-10 my-20 shadow rounded bg-gray-200">
-            <div className="flex flex-col items-center mt-10">
-              <img
-                src="https://img.freepik.com/premium-vector/art-illustration_29190-8569.jpg"
-                alt="no books"
-                style={{ width: "200px", height: "200px" }}
-              />
-              <p className="text-gray-700 mt-2">No Books purchased yet</p>
             </div>
           </div>
         )}

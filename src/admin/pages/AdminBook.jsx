@@ -117,7 +117,7 @@ const AllBooks = () => {
                       className="bg-white border rounded-md shadow hover:shadow-lg transition"
                     >
                       <img
-                        src={item.ImageUrl}
+                        src={item.imageUrl}
                         alt={item.tittle}
                         className="w-full h-64 object-cover rounded-t-md"
                       />

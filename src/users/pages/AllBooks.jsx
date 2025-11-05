@@ -5,77 +5,75 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faBars } from '@fortawesome/free-solid-svg-icons'
 import { Link } from 'react-router-dom'
 import { getAllBookApi } from '../../services/allApi'
-// ✅ Fix import path and ensure correct named export
 import { searchKeyContext } from '../../context/ContextSearch.jsx'
 
 const AllBooks = () => {
   const [token, setToken] = useState("")
   const [status, setStatus] = useState(false)
   const [allBooks, setAllBooks] = useState([])
-  const [tempBooks, setTempBooks] = useState([])
+  const [backupBooks, setBackupBooks] = useState([])
 
-  // ✅ Access context properly
-const { searchKey, setSearchKey } = useContext(searchKeyContext);
+  const { searchKey, setSearchKey } = useContext(searchKeyContext)
 
-  // ✅ Fetch all books
-  const getAllBooks = async (searchKey, tok) => {
-    const reqHeader = {
-      'Authorization': `Bearer ${tok}`
-    }
-
+  // ✅ Fetch books
+  const getAllBooks = async (search, tok) => {
+    if (!tok) return console.warn("⚠️ Missing token, cannot fetch books.")
     try {
-      const result = await getAllBookApi(searchKey, reqHeader)
-      if (result.status === 200) {
+      const reqHeader = { Authorization: `Bearer ${tok}` }
+      const result = await getAllBookApi(search, reqHeader)
+
+      if (result?.status === 200 && Array.isArray(result.data)) {
         setAllBooks(result.data)
-        setTempBooks(result.data)
+        setBackupBooks(result.data)
       } else {
-        console.warn("⚠️ Failed to fetch books:", result.data)
+        console.warn("⚠️ Unexpected response:", result)
+        setAllBooks([])
       }
     } catch (err) {
       console.error("❌ Error fetching books:", err)
+      setAllBooks([])
     }
   }
 
-  // ✅ Fetch on mount or when searchKey changes
+  // ✅ On mount + search change
   useEffect(() => {
     const storedToken = sessionStorage.getItem("token")
     if (storedToken) {
       setToken(storedToken)
       getAllBooks(searchKey, storedToken)
-    } else {
-      console.warn("⚠️ No token found in sessionStorage")
     }
   }, [searchKey])
 
-  // ✅ Filter function
+  // ✅ Filtering by category
   const filter = (category) => {
     if (category === "no-filter") {
-      setAllBooks(tempBooks)
-    } else {
-      setAllBooks(
-        tempBooks.filter(
-          (item) => item.category?.toLowerCase() === category.toLowerCase()
-        )
-      )
+      setAllBooks(backupBooks)
+      return
     }
+
+    const filtered = backupBooks.filter(
+      (item) => item.category?.toLowerCase() === category.toLowerCase()
+    )
+    setAllBooks(filtered)
   }
 
   return (
     <>
       <Header />
 
-      <div className="flex justify-center items-center flex-col">
-        <h3 className="mt-3 text-3xl font-medium">Collections</h3>
+      <div className="flex flex-col items-center">
+        <h3 className="mt-3 text-3xl font-semibold">Collections</h3>
+
         <div className="flex my-8 w-full justify-center items-center">
           <input
             value={searchKey}
-            onChange={(e) => setsearchKey(e.target.value)}
+            onChange={(e) => setSearchKey(e.target.value)}
             type="text"
             placeholder="Search By Title"
-            className="border border-gray-300 placeholder-gray-300 p-2 w-1/4 shadow"
+            className="border border-gray-300 placeholder-gray-400 p-2 w-1/4 shadow-sm rounded"
           />
           <button
-            className="bg-blue-900 text-white py-2 px-3 shadow hover:border hover:border-blue-900 hover:bg-white ms-2"
+            className="bg-blue-900 text-white py-2 px-4 ms-2 rounded hover:border hover:border-blue-900 hover:bg-white hover:text-blue-900 transition"
             onClick={() => getAllBooks(searchKey, token)}
           >
             Search
@@ -85,23 +83,32 @@ const { searchKey, setSearchKey } = useContext(searchKeyContext);
 
       {token ? (
         <div className="md:grid grid-cols-[1fr_4fr] md:px-10 px-5">
-          {/* Filters */}
+          {/* Sidebar Filters */}
           <div>
-            <div className="flex mt-3 justify-between">
-              <h1 className="text-2xl font-medium">Filters</h1>
-              <span onClick={() => setStatus(!status)} className="md:hidden">
+            <div className="flex mt-3 justify-between items-center">
+              <h1 className="text-2xl font-semibold">Filters</h1>
+              <span
+                onClick={() => setStatus(!status)}
+                className="md:hidden cursor-pointer"
+              >
                 <FontAwesomeIcon icon={faBars} />
               </span>
             </div>
 
-            <div className={status ? "md:block" : "md:block justify-center hidden"}>
-              {["Novel", "Philosophy", "Romance", "Autobiography", "Non-Fiction", "Politics"].map((cat) => (
-                <div key={cat} className="mt-3" onClick={() => filter(cat)}>
-                  <input type="radio" id={cat} name="filter" />
-                  <label htmlFor={cat} className="ms-3">{cat}</label>
-                </div>
-              ))}
-              <div className="mt-3" onClick={() => filter("no-filter")}>
+            <div
+              className={`${
+                status ? 'block' : 'hidden'
+              } md:block mt-4 space-y-3`}
+            >
+              {["Novel", "Philosophy", "Romance", "Autobiography", "Non-Fiction", "Politics"].map(
+                (cat) => (
+                  <div key={cat} onClick={() => filter(cat)} className="cursor-pointer">
+                    <input type="radio" id={cat} name="filter" />
+                    <label htmlFor={cat} className="ms-3">{cat}</label>
+                  </div>
+                )
+              )}
+              <div onClick={() => filter("no-filter")} className="cursor-pointer">
                 <input type="radio" id="no-filter" name="filter" />
                 <label htmlFor="no-filter" className="ms-3">No Filter</label>
               </div>
@@ -109,37 +116,43 @@ const { searchKey, setSearchKey } = useContext(searchKeyContext);
           </div>
 
           {/* Books Display */}
-          <div className="grid grid-cols-4 w-full gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-5 md:mt-0">
             {allBooks.length > 0 ? (
-              allBooks.map((item) => (
-                <div
-                  key={item._id}
-                  className="p-3 shadow"
-                  hidden={item?.status === "pending" || item?.status === "sold"}
-                >
-                  <img
-                    src={item?.ImageUrl || "https://via.placeholder.com/300"}
-                    alt={item?.title || "Book image"}
-                    style={{ width: "100%", height: "300px" }}
-                  />
-                  <div className="flex justify-center flex-col items-center mt-3">
-                    <p className="text-blue-700">{item?.title}</p>
-                    <p>{item?.author}</p>
-                    <p>Price: {item?.dPrice}</p>
-                    <Link to={`/view-book/${item?._id}`}>
-                      <button className="w-full mt-3 px-3 py-2 bg-blue-900 text-white hover:border hover:border-blue-900 hover:text-blue-900 hover:bg-white cursor-pointer rounded">
-                        View Book
-                      </button>
-                    </Link>
+              allBooks.map((item) => {
+                const hidden = item?.status === "pending" || item?.status === "sold"
+                if (hidden) return null
+
+                return (
+                  <div
+                    key={item._id}
+                    className="p-3 shadow-md rounded hover:shadow-lg transition bg-white"
+                  >
+                    <img
+                      src={item?.imageUrl || "https://via.placeholder.com/300x300?text=No+Image"}
+                      alt={item?.title || "Book image"}
+                      className="w-full h-[300px] object-cover rounded"
+                    />
+                    <div className="flex flex-col items-center mt-3">
+                      <p className="text-blue-700 font-medium text-lg text-center">{item?.title}</p>
+                      <p className="text-gray-600">{item?.author}</p>
+                      <p className="text-gray-800 mt-1">Price: ₹{item?.dPrice || "N/A"}</p>
+
+                      <Link to={`/view-book/${item?._id}`} className="w-full">
+                        <button className="w-full mt-3 px-3 py-2 bg-blue-900 text-white rounded hover:border hover:border-blue-900 hover:text-blue-900 hover:bg-white transition">
+                          View Book
+                        </button>
+                      </Link>
+                    </div>
                   </div>
-                </div>
-              ))
+                )
+              })
             ) : (
-              <p>Loading ......</p>
+              <p className="col-span-full text-center text-gray-500 mt-10">No books found...</p>
             )}
           </div>
         </div>
       ) : (
+        // If not logged in
         <div className="grid grid-cols-3">
           <div></div>
           <div className="flex justify-center items-center flex-col w-full">
@@ -148,8 +161,12 @@ const { searchKey, setSearchKey } = useContext(searchKeyContext);
               alt="no image"
               className="w-1/2"
             />
-            <p className="mt-3 text-2xl">
-              Please <Link to="/login" className="text-red-500 underline">Login</Link> to explore more...
+            <p className="mt-3 text-2xl text-center">
+              Please{" "}
+              <Link to="/login" className="text-red-500 underline">
+                Login
+              </Link>{" "}
+              to explore more...
             </p>
           </div>
           <div></div>

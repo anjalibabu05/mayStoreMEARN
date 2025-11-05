@@ -27,7 +27,7 @@ const AdminCareers = () => {
   const [applicantStatus, setapplicantStatus] = useState(false);
 
   const [jobDetails, setJobDetails] = useState({
-    tittle: "",
+    title: "",
     location: "",
     jType: "",
     salary: "",
@@ -82,16 +82,16 @@ const AdminCareers = () => {
 
   // ✅ Handle Submit Job
   const handleSubmit = async () => {
-    const { tittle, location, jType, salary, qualification, experience, description } = jobDetails;
+    const { title, location, jType, salary, qualification, experience, description } = jobDetails;
 
-    if (!tittle || !location || !jType || !salary || !qualification || !experience || !description) {
+    if (!title || !location || !jType || !salary || !qualification || !experience || !description) {
       toast.info("Please fill the form completely!");
       return;
     }
 
     try {
       const result = await addJobApi({
-        tittle,
+        title,
         location,
         jType,
         salary,
@@ -120,7 +120,7 @@ const AdminCareers = () => {
   // ✅ Reset Form
   const handleReset = () => {
     setJobDetails({
-      tittle: "",
+      title: "",
       location: "",
       jType: "",
       salary: "",
@@ -177,8 +177,8 @@ const AdminCareers = () => {
               <button
                 onClick={() => handleTabSwitch("jobs")}
                 className={`pb-1 ${activeTab === "jobs"
-                    ? "border-b-2 border-black font-medium"
-                    : "hover:text-blue-600"
+                  ? "border-b-2 border-black font-medium"
+                  : "hover:text-blue-600"
                   }`}
               >
                 Job Post
@@ -186,8 +186,8 @@ const AdminCareers = () => {
               <button
                 onClick={() => handleTabSwitch("applicants")}
                 className={`pb-1 ${activeTab === "applicants"
-                    ? "border-b-2 border-black font-medium"
-                    : "hover:text-blue-600"
+                  ? "border-b-2 border-black font-medium"
+                  : "hover:text-blue-600"
                   }`}
               >
                 View Applicants
@@ -228,7 +228,7 @@ const AdminCareers = () => {
                       key={item._id}
                       className="border rounded-md shadow-sm p-6 bg-white relative mb-4"
                     >
-                      <h3 className="text-lg font-semibold mb-2">{item.tittle}</h3>
+                      <h3 className="text-lg font-semibold mb-2">{item.title}</h3>
                       <p className="text-gray-700 mb-2">Location: {item.location}</p>
                       <p>Job Type: {item.jType}</p>
                       <p>Salary: {item.salary}</p>
@@ -302,9 +302,9 @@ const AdminCareers = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <input
-                    value={jobDetails.tittle}
+                    value={jobDetails.title}
                     onChange={(e) =>
-                      setJobDetails({ ...jobDetails, tittle: e.target.value })
+                      setJobDetails({ ...jobDetails, title: e.target.value })
                     }
                     type="text"
                     placeholder="Job Title"

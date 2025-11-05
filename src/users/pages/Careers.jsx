@@ -112,7 +112,7 @@ const Careers = () => {
       <div className='flex flex-col justify-center gap-7 px-3 py-2 mx-5 my-4'>
         <h1 className='text-center text-4xl'>Careers</h1>
         <p className='text-justify'>
-          Lorem ipsum dolor sit amet consectetur adipisicing elit. Voluptate sed voluptas quidem possimus...
+          Explore opportunities and apply to join our growing team.
         </p>
       </div>
 
@@ -131,30 +131,33 @@ const Careers = () => {
       {/* Jobs List */}
       <div className='py-5 px-5 md:px-20 flex flex-col gap-5'>
         {allJobs.length > 0 ? (
-          allJobs.map((job) => (
-            <div key={job._id} className='shadow border border-gray-300 p-4 rounded-md'>
-              <div className='md:grid grid-cols-[8fr_1fr]'>
-                <div className='px-3 py-2'>
-                  <h1 className='text-xl font-semibold'>{job.tittle}</h1>
-                  <hr className='my-2' />
-                  <h3 className='mt-3'><FontAwesomeIcon icon={faLocationDot} /> {job.location}</h3>
-                  <h3 className='mt-3'>Job Type: {job.jType}</h3>
-                  <h3 className='mt-3'>Salary: {job.salary}</h3>
-                  <h3 className='mt-3'>Qualification: {job.qualification}</h3>
-                  <h3 className='mt-3'>Experience: {job.experience}</h3>
-                  <p className='text-justify mt-3'>Description: {job.description}</p>
-                </div>
-                <div className='flex items-start justify-end px-3 py-2'>
-                  <button
-                    onClick={() => openModal(job?.tittle)}
-                    className='px-3 py-1 mt-2 bg-blue-600 rounded text-white hover:bg-blue-800 hover:scale-105 transition-transform'
-                  >
-                    Apply <FontAwesomeIcon icon={faShare} />
-                  </button>
+          allJobs.map((job) => {
+            const jobName = job.title || job.tittle || "Untitled";
+            return (
+              <div key={job._id} className='shadow border border-gray-300 p-4 rounded-md'>
+                <div className='md:grid grid-cols-[8fr_1fr]'>
+                  <div className='px-3 py-2'>
+                    <h1 className='text-xl font-semibold'>{jobName}</h1>
+                    <hr className='my-2' />
+                    <h3 className='mt-3'><FontAwesomeIcon icon={faLocationDot} /> {job.location}</h3>
+                    <h3 className='mt-3'>Job Type: {job.jType}</h3>
+                    <h3 className='mt-3'>Salary: {job.salary}</h3>
+                    <h3 className='mt-3'>Qualification: {job.qualification}</h3>
+                    <h3 className='mt-3'>Experience: {job.experience}</h3>
+                    <p className='text-justify mt-3'>Description: {job.description}</p>
+                  </div>
+                  <div className='flex items-start justify-end px-3 py-2'>
+                    <button
+                      onClick={() => openModal(jobName)}
+                      className='px-3 py-1 mt-2 bg-blue-600 rounded text-white hover:bg-blue-800 hover:scale-105 transition-transform'
+                    >
+                      Apply <FontAwesomeIcon icon={faShare} />
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
+            );
+          })
         ) : (
           <p className='text-center text-gray-600'>No jobs available at the moment.</p>
         )}
@@ -182,68 +185,18 @@ const Careers = () => {
                 className="p-2 border rounded w-full mb-3 bg-gray-100 cursor-not-allowed"
               />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <input
-                  name="fullname"
-                  value={applicationDetails.fullname}
-                  onChange={handleChange}
-                  type="text"
-                  placeholder="Full Name"
-                  className="p-2 border rounded w-full"
-                />
-                <input
-                  name="email"
-                  value={applicationDetails.email}
-                  onChange={handleChange}
-                  type="email"
-                  placeholder="Email Id"
-                  className="p-2 border rounded w-full"
-                />
-                <input
-                  name="qualifications"
-                  value={applicationDetails.qualifications}
-                  onChange={handleChange}
-                  type="text"
-                  placeholder="Qualification"
-                  className="p-2 border rounded w-full"
-                />
-                <input
-                  name="phone"
-                  value={applicationDetails.phone}
-                  onChange={handleChange}
-                  type="text"
-                  placeholder="Phone"
-                  className="p-2 border rounded w-full"
-                />
+                <input name="fullname" value={applicationDetails.fullname} onChange={handleChange} type="text" placeholder="Full Name" className="p-2 border rounded w-full" />
+                <input name="email" value={applicationDetails.email} onChange={handleChange} type="email" placeholder="Email Id" className="p-2 border rounded w-full" />
+                <input name="qualifications" value={applicationDetails.qualifications} onChange={handleChange} type="text" placeholder="Qualification" className="p-2 border rounded w-full" />
+                <input name="phone" value={applicationDetails.phone} onChange={handleChange} type="text" placeholder="Phone" className="p-2 border rounded w-full" />
               </div>
-              <textarea
-                name="coverletter"
-                value={applicationDetails.coverletter}
-                onChange={handleChange}
-                placeholder="Cover Letter"
-                className="p-2 border rounded w-full mt-3"
-              />
-              <input
-                name="resume"
-                type="file"
-                ref={fileInputRef}
-                onChange={handleChange}
-                className="border border-gray-400 rounded w-full mt-3 file:bg-gray-400 file:text-white file:p-2"
-              />
+              <textarea name="coverletter" value={applicationDetails.coverletter} onChange={handleChange} placeholder="Cover Letter" className="p-2 border rounded w-full mt-3" />
+              <input name="resume" type="file" ref={fileInputRef} onChange={handleChange} className="border border-gray-400 rounded w-full mt-3 file:bg-gray-400 file:text-white file:p-2" />
             </div>
 
             <div className="flex justify-end gap-2 bg-gray-200 p-3 rounded-b">
-              <button
-                onClick={handleSubmit}
-                className="bg-green-600 px-3 py-2 rounded text-white hover:bg-white hover:text-black hover:border hover:border-gray-300 transition"
-              >
-                Submit
-              </button>
-              <button
-                onClick={handleReset}
-                className="bg-orange-500 px-3 py-2 rounded text-white hover:bg-gray-50 hover:text-black transition"
-              >
-                Reset
-              </button>
+              <button onClick={handleSubmit} className="bg-green-600 px-3 py-2 rounded text-white hover:bg-white hover:text-black hover:border hover:border-gray-300 transition">Submit</button>
+              <button onClick={handleReset} className="bg-orange-500 px-3 py-2 rounded text-white hover:bg-gray-50 hover:text-black transition">Reset</button>
             </div>
           </div>
         </div>
