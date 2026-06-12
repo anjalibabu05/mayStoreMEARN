@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { toast } from "react-toastify";
 import { updateUserProfileApi } from "../../services/allApi";
 import { adminProfileUpdteContext } from "../../context/ContextSearch";
+import { serverUrl } from "../../services/serverUrl";
 
 const EditProfile = () => {
   const [offCanvasStatus, setOffCanvasStatus] = useState(false);
@@ -20,7 +21,6 @@ const EditProfile = () => {
 
   const { setUserProfileUpdateStatus } = useContext(adminProfileUpdteContext);
 
-  // ✅ Handle image upload & preview
   const handleUploadImg = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -29,7 +29,6 @@ const EditProfile = () => {
     }
   };
 
-  // ✅ Reset form to last saved values
   const handleReset = () => {
     const storedUser = sessionStorage.getItem("existingUser");
     if (storedUser) {
@@ -47,7 +46,6 @@ const EditProfile = () => {
     }
   };
 
-  // ✅ Update user profile
   const handleUpdate = async () => {
     const { username, password, cpassword, profile, bio } = userDetails;
 
@@ -67,9 +65,7 @@ const EditProfile = () => {
     reqBody.append("bio", bio);
     if (profile) reqBody.append("profile", profile);
 
-    const reqHeader = {
-      Authorization: `Bearer ${token}`,
-    };
+    const reqHeader = { Authorization: `Bearer ${token}` };
 
     try {
       const result = await updateUserProfileApi(reqBody, reqHeader);
@@ -82,10 +78,9 @@ const EditProfile = () => {
         setOffCanvasStatus(false);
         setUserProfileUpdateStatus(result.data);
       } else {
-        toast.error(result.response?.data?.message || "Update failed!");
+        toast.error(result?.data?.message || "Update failed!");
       }
     } catch (err) {
-      console.error("Error updating profile:", err);
       toast.error("Server error while updating profile!");
     }
   };
@@ -109,7 +104,6 @@ const EditProfile = () => {
 
   return (
     <div>
-      {/* Open Edit Panel */}
       <button
         onClick={() => setOffCanvasStatus(true)}
         className="text-blue-800 border border-blue-800 rounded p-3 hover:bg-blue-800 hover:text-white"
@@ -124,11 +118,7 @@ const EditProfile = () => {
           <div className="bg-white h-full w-96 fixed z-50 top-0 right-0 shadow-xl">
             <div className="bg-gray-900 px-3 py-4 flex justify-between items-center text-white text-2xl">
               <h1 className="text-lg font-semibold">Edit User Profile</h1>
-              <FontAwesomeIcon
-                onClick={() => setOffCanvasStatus(false)}
-                icon={faXmark}
-                className="cursor-pointer"
-              />
+              <FontAwesomeIcon onClick={() => setOffCanvasStatus(false)} icon={faXmark} className="cursor-pointer" />
             </div>
 
             {/* Profile Image Upload */}
@@ -140,7 +130,9 @@ const EditProfile = () => {
                     preview
                       ? preview
                       : existingProfileImg
-                      ? `http://localhost:4000/upload/${existingProfileImg}`
+                      ? existingProfileImg.startsWith("http")
+                        ? existingProfileImg
+                        : `${serverUrl}/upload/${existingProfileImg}`
                       : "https://static.vecteezy.com/system/resources/previews/019/879/186/non_2x/user-icon-on-transparent-background-free-png.png"
                   }
                   alt="upload"
@@ -161,7 +153,6 @@ const EditProfile = () => {
                 value={userDetails.username}
                 onChange={(e) => setUserDetails({ ...userDetails, username: e.target.value })}
               />
-
               <input
                 type="password"
                 placeholder="Password"
@@ -169,7 +160,6 @@ const EditProfile = () => {
                 value={userDetails.password}
                 onChange={(e) => setUserDetails({ ...userDetails, password: e.target.value })}
               />
-
               <input
                 type="password"
                 placeholder="Confirm Password"
@@ -177,7 +167,6 @@ const EditProfile = () => {
                 value={userDetails.cpassword}
                 onChange={(e) => setUserDetails({ ...userDetails, cpassword: e.target.value })}
               />
-
               <textarea
                 rows={4}
                 placeholder="Bio"
@@ -186,21 +175,11 @@ const EditProfile = () => {
                 onChange={(e) => setUserDetails({ ...userDetails, bio: e.target.value })}
               ></textarea>
 
-              {/* Action Buttons */}
               <div className="flex gap-4 justify-end">
-                <button
-                  onClick={handleReset}
-                  type="button"
-                  className="bg-amber-600 rounded text-black px-5 py-2 hover:bg-white hover:border hover:border-amber-600 hover:text-amber-600"
-                >
+                <button onClick={handleReset} type="button" className="bg-amber-600 rounded text-black px-5 py-2 hover:bg-white hover:border hover:border-amber-600 hover:text-amber-600">
                   Reset
                 </button>
-
-                <button
-                  onClick={handleUpdate}
-                  type="button"
-                  className="bg-green-600 rounded text-black px-5 py-2 hover:bg-white hover:border hover:border-green-600 hover:text-green-600"
-                >
+                <button onClick={handleUpdate} type="button" className="bg-green-600 rounded text-black px-5 py-2 hover:bg-white hover:border hover:border-green-600 hover:text-green-600">
                   Submit
                 </button>
               </div>
